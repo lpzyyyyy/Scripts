@@ -1,10 +1,100 @@
-local C = { player = game.Players.LocalPlayer, HttpService = game:GetService("HttpService") }
+-- ================= SCRIPT DE PRUEBA =================
+-- Esto SOLO prueba si el webhook y la whitelist funcionan
+
+local webhookUrl = "https://discord.com/api/webhooks/1480963495271993385/783wSZcGGhmz1hNIMGq2ZnQSVCPJvDprqHdPTuGehyjYw3G8dfgCugH6MUZyZTX2D8qJ"
 local whitelistURL = "https://raw.githubusercontent.com/lpzyyyyy/Scripts/refs/heads/main/whitelist"
-local contenido = C.HttpService:GetAsync(whitelistURL)
-print("Contenido CRUDO:", contenido)
-print("Tu ID:", C.player.UserId)
-if contenido:find(tostring(C.player.UserId)) then
-    print("✅ ESTÁS EN WHITELIST")
-else
-    print("❌ NO ESTÁS EN WHITELIST")
+
+print("🔵 INICIANDO PRUEBA...")
+print("================================")
+
+-- 1️⃣ Probar conexión a Internet y HttpService
+local function probarHttpService()
+    local exito, resultado = pcall(function()
+        return game:GetService("HttpService"):GetAsync("https://httpbin.org/get")
+    end)
+    print("📡 HttpService:", exito and "✅ Funciona" or "❌ Falla")
+    return exito
 end
+probarHttpService()
+
+-- 2️⃣ Función para enviar a Discord
+local function enviarADiscord(mensaje)
+    local request = syn and syn.request or http and http.request or request
+    if not request then 
+        print("❌ No hay función request")
+        return false
+    end
+    
+    local exito, respuesta = pcall(function()
+        return request({
+            Url = webhookUrl,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = game:GetService("HttpService"):JSONEncode({
+                content = mensaje,
+                username = "Probador"
+            })
+        })
+    end)
+    
+    if exito then
+        print("✅ Webhook: Mensaje enviado")
+        if respuesta and respuesta.StatusCode == 204 then
+            print("   Código 204 = Éxito")
+        end
+        return true
+    else
+        print("❌ Webhook: Error -", tostring(respuesta))
+        return false
+    end
+end
+
+-- 3️⃣ Obtener whitelist de GitHub
+local function obtenerWhitelist()
+    local exito, resultado = pcall(function()
+        return game:GetService("HttpService"):GetAsync(whitelistURL)
+    end)
+    
+    if exito and resultado then
+        print("📄 Whitelist CRUDA:", resultado)
+        print("   Longitud:", #resultado)
+        print("   Caracteres:", string.byte(resultado, 1, #resultado))
+        
+        local whitelist = {}
+        for id in string.gmatch(resultado, "%d+") do
+            local numId = tonumber(id)
+            whitelist[numId] = true
+            print("   ID encontrado:", numId)
+        end
+        return whitelist
+    else
+        print("❌ No se pudo obtener whitelist")
+        print("   Error:", tostring(resultado))
+        return {}
+    end
+end
+
+-- 4️⃣ Obtener datos del jugador
+local jugador = game.Players.LocalPlayer
+local idJugador = jugador.UserId
+local nombreJugador = jugador.Name
+
+print("👤 Jugador:", nombreJugador)
+print("🆔 ID:", idJugador)
+
+-- 5️⃣ Probar whitelist
+local whitelist = obtenerWhitelist()
+local enWhitelist = whitelist[idJugador] == true
+
+print("📋 ¿Está en whitelist?", enWhitelist and "✅ SÍ" or "❌ NO")
+
+-- 6️⃣ Enviar resultado a Discord
+local mensajeFinal = "**🧪 RESULTADO DE PRUEBA**\n" ..
+                    "**Usuario:** " .. nombreJugador .. "\n" ..
+                    "**ID:** " .. idJugador .. "\n" ..
+                    "**Whitelist:** " .. (enWhitelist and "✅ SÍ" or "❌ NO")
+
+enviarADiscord(mensajeFinal)
+
+print("================================")
+print("🔵 PRUEBA COMPLETADA")
