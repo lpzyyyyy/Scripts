@@ -15,9 +15,8 @@ local C = {
 local webhookUrl = "https://discord.com/api/webhooks/1480963495271993385/783wSZcGGhmz1hNIMGq2ZnQSVCPJvDprqHdPTuGehyjYw3G8dfgCugH6MUZyZTX2D8qJ"
 local whitelistURL = "https://raw.githubusercontent.com/lpzyyyyy/Scripts/refs/heads/main/whitelist"
 
--- ================= FUNCIÓN PARA DISCORD (VERSIÓN WAVE) =================
+-- ================= FUNCIÓN PARA DISCORD (usando HttpService) =================
 local function enviarADiscord(mensaje)
-    -- Wave NO tiene syn.request, usamos HttpService:PostAsync
     local exito, respuesta = pcall(function()
         return C.HttpService:PostAsync(webhookUrl, C.HttpService:JSONEncode({
             content = mensaje,
@@ -26,30 +25,20 @@ local function enviarADiscord(mensaje)
     end)
     
     if exito then
-        print("[Lpzy Hub] ✅ Mensaje enviado a Discord")
+        -- No mostramos nada para no spamear
         return true
     else
-        -- No mostramos error para no spamear la consola
         return false
     end
 end
 
--- ================= FUNCIÓN PARA WHITELIST (usando syn.request) =================
+-- ================= FUNCIÓN PARA WHITELIST (usando HttpService) =================
 local function obtenerWhitelist()
-    if not syn or not syn.request then
-        warn("[Lpzy Hub] No se puede obtener whitelist - sin syn.request")
-        return { [6131877259] = true } -- Respaldo con TU ID
-    end
-    
-    local exito, respuesta = pcall(function()
-        return syn.request({
-            Url = whitelistURL,
-            Method = "GET"
-        })
+    local exito, resultado = pcall(function()
+        return C.HttpService:GetAsync(whitelistURL)
     end)
     
-    if exito and respuesta and respuesta.StatusCode == 200 and respuesta.Body then
-        local resultado = respuesta.Body
+    if exito and resultado and resultado ~= "" then
         resultado = resultado:gsub("%s+", "") -- quitar espacios
         
         local whitelist = {}
@@ -61,13 +50,17 @@ local function obtenerWhitelist()
         end
         
         if next(whitelist) then
-            print("[Lpzy Hub] Whitelist cargada correctamente")
+            print("[Lpzy Hub] ✅ Whitelist cargada desde GitHub")
             return whitelist
         end
     end
     
-    warn("[Lpzy Hub] No se pudo obtener whitelist, usando respaldo")
-    return { [6131877259] = true } -- TU ID como respaldo
+    -- Si falla, usar respaldo local
+    warn("[Lpzy Hub] ⚠️ No se pudo obtener whitelist de GitHub, usando respaldo local")
+    return { 
+        [6131877259] = true, -- TU ID
+        [608008834] = true   -- OTRO ID si quieres
+    }
 end
 
 -- ================= VERIFICACIÓN DE WHITELIST =================
@@ -87,24 +80,29 @@ print("Contenido de whitelist:")
 for id, _ in pairs(whitelistIDs) do
     print("  ID en whitelist:", id, "Tipo:", type(id))
     if id == idJugador then
-        print("  → ¡COINCIDENCIA ENCONTRADA!")
+        print("  → ✅ ¡COINCIDENCIA ENCONTRADA!")
     end
 end
 print("¿Estás en whitelist?", whitelistIDs[idJugador] and "✅ SÍ" or "❌ NO")
 print("================================")
 
--- Siempre notificar
+-- Siempre notificar (intento, pero Wave probablemente falla)
 enviarADiscord("📢 **Script ejecutado**\nUsuario: " .. nombreJugador .. "\nID: " .. idJugador)
 
 -- Si NO está en whitelist, detener
 if not whitelistIDs[idJugador] then
-    enviarADiscord("⛔ **Acceso DENEGADO**\nUsuario: " .. nombreJugador .. "\nID: " .. idJugador)
+    enviarADiscord("⛔ **Acceso DENEGADO**\nUsuario: " .. nombreJugador)
     return
 end
 
 -- Si está en whitelist, continuar
 enviarADiscord("✅ **Acceso AUTORIZADO**\nUsuario: " .. nombreJugador)
-print("[Lpzy Hub] Bienvenido " .. nombreJugador)
+print("[Lpzy Hub] ✅ Bienvenido " .. nombreJugador)
+
+-- ===== A PARTIR DE AQUÍ VA TODO EL RESTO DE TU CÓDIGO =====
+local isMobile = C.UIS.TouchEnabled and not C.UIS.KeyboardEnabled
+local guiScale = isMobile and 0.4 or 1.0
+-- ... (todo lo demás) ...
 
 local isMobile = C.UIS.TouchEnabled and not C.UIS.KeyboardEnabled
 local guiScale = isMobile and 0.4 or 1.0
