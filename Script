@@ -15,36 +15,51 @@ local C = {
 local webhookUrl = "https://discord.com/api/webhooks/1480963495271993385/783wSZcGGhmz1hNIMGq2ZnQSVCPJvDprqHdPTuGehyjYw3G8dfgCugH6MUZyZTX2D8qJ"
 local whitelistURL = "https://raw.githubusercontent.com/lpzyyyyy/Scripts/refs/heads/main/whitelist"
 
--- Función para enviar a Discord
+-- ================= FUNCIÓN UNIVERSAL PARA DISCORD =================
 local function enviarADiscord(mensaje)
-    local request = syn and syn.request or http and http.request or request
-    if not request then
-        warn("[Lpzy Hub] No request function found")
-        return false
-    end
-
-    local exito, respuesta = pcall(function()
-        return request({
-            Url = webhookUrl,
-            Method = "POST",
-            Headers = {["Content-Type"] = "application/json"},
-            Body = C.HttpService:JSONEncode({
-                content = mensaje,
-                username = "Lpzy Hub"
+    -- Detectar automáticamente cualquier función request disponible
+    local requestFunction = syn and syn.request or http and http.request or request or http_request or syn_request
+    
+    if requestFunction then
+        -- Método 1: Usar request
+        local exito, respuesta = pcall(function()
+            return requestFunction({
+                Url = webhookUrl,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = C.HttpService:JSONEncode({
+                    content = mensaje,
+                    username = "Lpzy Hub"
+                })
             })
-        })
+        end)
+        
+        if exito then
+            print("[Lpzy Hub] ✅ Mensaje enviado a Discord")
+            return true
+        else
+            warn("[Lpzy Hub] ❌ Error con request:", tostring(respuesta))
+        end
+    end
+    
+    -- Método 2: Intentar con HttpService (algunos ejecutores lo soportan)
+    local exitoHttp, respuestaHttp = pcall(function()
+        return C.HttpService:PostAsync(webhookUrl, C.HttpService:JSONEncode({
+            content = mensaje,
+            username = "Lpzy Hub"
+        }))
     end)
-
-    if exito then
-        print("[Lpzy Hub] Mensaje enviado a Discord")
+    
+    if exitoHttp then
+        print("[Lpzy Hub] ✅ Enviado con HttpService")
         return true
     else
-        warn("[Lpzy Hub] Error enviando a Discord: " .. tostring(respuesta))
+        warn("[Lpzy Hub] ❌ No se pudo enviar a Discord. Tu executor no soporta requests")
         return false
     end
 end
 
--- Función para obtener whitelist de GitHub
+-- ================= FUNCIÓN PARA OBTENER WHITELIST =================
 local function obtenerWhitelist()
     local exito, resultado = pcall(function()
         return C.HttpService:GetAsync(whitelistURL)
@@ -53,6 +68,7 @@ local function obtenerWhitelist()
     if exito and resultado and resultado ~= "" then
         local whitelist = {}
         resultado = resultado:gsub("%s+", "") -- quitar espacios
+        
         for id in string.gmatch(resultado, "%d+") do
             local numId = tonumber(id)
             if numId then
@@ -70,13 +86,13 @@ local function obtenerWhitelist()
     return { [608008834] = true } -- tu ID de respaldo
 end
 
--- VERIFICACIÓN DE WHITELIST (AHORA C YA EXISTE)
+-- ================= VERIFICACIÓN DE WHITELIST =================
 local whitelistIDs = obtenerWhitelist()
 local jugador = C.player
 local idJugador = jugador.UserId
 local nombreJugador = jugador.Name
 
--- DIAGNÓSTICO
+-- DIAGNÓSTICO EN CONSOLA
 print("===== DIAGNÓSTICO WHITELIST =====")
 print("Tu ID:", idJugador)
 print("Tipo de ID:", type(idJugador))
