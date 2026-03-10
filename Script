@@ -11,7 +11,7 @@ local C = {
     player = game:GetService("Players").LocalPlayer
 }
 
-local webhookUrl = "https://discord.com/api/webhooks/1480963495271993385/783wSZcGGhmz1hNIMGq2ZnQSVCPJvDprqHdPTuGehyjYw3G8dfgCugH6MUZyZTX2D8qJ"
+local webhookUrl = "https://discord.com/api/webhooks/1480983405750653018/MYlupEIcgsExZeECj29x8JcR8lPXKJRxHGBB5tyOkFaLLncowxD286ORTlYBwL6LZB-D"
 
 -- ================= WHITELIST LOCAL (FÁCIL DE EDITAR) =================
 -- Agrega aquí los IDs de las personas autorizadas
