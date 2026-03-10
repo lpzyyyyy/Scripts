@@ -54,6 +54,7 @@ local function obtenerWhitelist()
 
     warn("[Lpzy Hub] No se pudo obtener whitelist, usando respaldo")
     return { [608008834] = true }
+    return { [6131877259] = true }
 end
 
 -- VERIFICACIÓN DE WHITELIST
