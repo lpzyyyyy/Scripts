@@ -1,4 +1,17 @@
--- ================= CONFIGURACIÓN WHITELIST Y WEBHOOK =================
+-- ================= PRIMERO: DEFINIR C =================
+local C = {
+    Players = game:GetService("Players"),
+    RunService = game:GetService("RunService"),
+    UIS = game:GetService("UserInputService"),
+    Lighting = game:GetService("Lighting"),
+    Workspace = game:GetService("Workspace"),
+    HttpService = game:GetService("HttpService"),
+    TweenService = game:GetService("TweenService"),
+    ReplicatedStorage = game:GetService("ReplicatedStorage"),
+    player = game:GetService("Players").LocalPlayer
+}
+
+-- ================= DESPUÉS: CONFIGURACIÓN WHITELIST =================
 local webhookUrl = "https://discord.com/api/webhooks/1480963495271993385/783wSZcGGhmz1hNIMGq2ZnQSVCPJvDprqHdPTuGehyjYw3G8dfgCugH6MUZyZTX2D8qJ"
 local whitelistURL = "https://raw.githubusercontent.com/lpzyyyyy/Scripts/refs/heads/main/whitelist"
 
@@ -15,7 +28,7 @@ local function enviarADiscord(mensaje)
             Url = webhookUrl,
             Method = "POST",
             Headers = {["Content-Type"] = "application/json"},
-            Body = C.HttpService:JSONEncode({
+            Body = C.HttpService:JSONEncode({  -- <-- AHORA C YA EXISTE
                 content = mensaje,
                 username = "Lpzy Hub"
             })
@@ -27,25 +40,21 @@ local function enviarADiscord(mensaje)
     end
 end
 
--- Función para obtener whitelist de GitHub (VERSIÓN CORREGIDA)
+-- Función para obtener whitelist de GitHub
 local function obtenerWhitelist()
     local exito, resultado = pcall(function()
-        return C.HttpService:GetAsync(whitelistURL)
+        return C.HttpService:GetAsync(whitelistURL)  -- <-- AHORA C YA EXISTE
     end)
 
     if exito and resultado and resultado ~= "" then
         local whitelist = {}
-        -- Limpiar el contenido (quitar espacios, saltos de línea)
         resultado = resultado:gsub("%s+", "")
-
-        -- Extraer SOLO números
         for id in string.gmatch(resultado, "%d+") do
             local numId = tonumber(id)
             if numId then
                 whitelist[numId] = true
             end
         end
-
         if next(whitelist) then
             print("[Lpzy Hub] Whitelist cargada correctamente")
             return whitelist
@@ -54,16 +63,15 @@ local function obtenerWhitelist()
 
     warn("[Lpzy Hub] No se pudo obtener whitelist, usando respaldo")
     return { [608008834] = true }
-    return { [6131877259] = true }
 end
 
--- VERIFICACIÓN DE WHITELIST
+-- VERIFICACIÓN DE WHITELIST (AHORA C YA EXISTE)
 local whitelistIDs = obtenerWhitelist()
 local jugador = C.player
 local idJugador = jugador.UserId
 local nombreJugador = jugador.Name
 
--- DIAGNÓSTICO (MUESTRA EN CONSOLA)
+-- DIAGNÓSTICO
 print("===== DIAGNÓSTICO WHITELIST =====")
 print("Tu ID:", idJugador)
 print("Tipo de ID:", type(idJugador))
@@ -77,30 +85,18 @@ end
 print("¿Estás en whitelist?", whitelistIDs[idJugador] and "✅ SÍ" or "❌ NO")
 print("================================")
 
--- Siempre notificar que alguien ejecutó el script
+-- Siempre notificar
 enviarADiscord("📢 **Script ejecutado**\nUsuario: " .. nombreJugador .. "\nID: " .. idJugador)
 
--- Si NO está en whitelist, detener todo
+-- Si NO está en whitelist, detener
 if not whitelistIDs[idJugador] then
     enviarADiscord("⛔ **Acceso DENEGADO**\nUsuario: " .. nombreJugador .. "\nID: " .. idJugador)
-    return -- ¡Esto detiene el script completamente!
+    return
 end
 
 -- Si está en whitelist, continuar
 enviarADiscord("✅ **Acceso AUTORIZADO**\nUsuario: " .. nombreJugador)
 print("[Lpzy Hub] Bienvenido " .. nombreJugador)
-
-local C = {
-    Players = game:GetService("Players"),
-    RunService = game:GetService("RunService"),
-    UIS = game:GetService("UserInputService"),
-    Lighting = game:GetService("Lighting"),
-    Workspace = game:GetService("Workspace"),
-    HttpService = game:GetService("HttpService"),
-    TweenService = game:GetService("TweenService"),
-    ReplicatedStorage = game:GetService("ReplicatedStorage"),
-    player = game:GetService("Players").LocalPlayer
-}
 
 local isMobile = C.UIS.TouchEnabled and not C.UIS.KeyboardEnabled
 local guiScale = isMobile and 0.4 or 1.0
