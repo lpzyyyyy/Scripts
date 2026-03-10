@@ -15,30 +15,21 @@ local C = {
 local webhookUrl = "https://discord.com/api/webhooks/1480963495271993385/783wSZcGGhmz1hNIMGq2ZnQSVCPJvDprqHdPTuGehyjYw3G8dfgCugH6MUZyZTX2D8qJ"
 local whitelistURL = "https://raw.githubusercontent.com/lpzyyyyy/Scripts/refs/heads/main/whitelist"
 
--- ================= FUNCIÓN PARA DISCORD (usando syn.request) =================
+-- ================= FUNCIÓN PARA DISCORD (VERSIÓN WAVE) =================
 local function enviarADiscord(mensaje)
-    if not syn or not syn.request then
-        warn("[Lpzy Hub] Wave no tiene syn.request?")
-        return false
-    end
-    
+    -- Wave NO tiene syn.request, usamos HttpService:PostAsync
     local exito, respuesta = pcall(function()
-        return syn.request({
-            Url = webhookUrl,
-            Method = "POST",
-            Headers = {["Content-Type"] = "application/json"},
-            Body = C.HttpService:JSONEncode({
-                content = mensaje,
-                username = "Lpzy Hub"
-            })
-        })
+        return C.HttpService:PostAsync(webhookUrl, C.HttpService:JSONEncode({
+            content = mensaje,
+            username = "Lpzy Hub"
+        }))
     end)
     
     if exito then
         print("[Lpzy Hub] ✅ Mensaje enviado a Discord")
         return true
     else
-        warn("[Lpzy Hub] ❌ Error:", tostring(respuesta))
+        -- No mostramos error para no spamear la consola
         return false
     end
 end
