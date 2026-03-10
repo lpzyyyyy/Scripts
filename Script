@@ -9,7 +9,7 @@ local function enviarADiscord(mensaje)
         warn("[Lpzy Hub] No request function found")
         return 
     end
-    
+
     local exito, respuesta = pcall(function()
         return request({
             Url = webhookUrl,
@@ -21,7 +21,7 @@ local function enviarADiscord(mensaje)
             })
         })
     end)
-    
+
     if not exito then
         warn("[Lpzy Hub] Error enviando a Discord: " .. tostring(respuesta))
     end
@@ -32,12 +32,12 @@ local function obtenerWhitelist()
     local exito, resultado = pcall(function()
         return C.HttpService:GetAsync(whitelistURL)
     end)
-    
+
     if exito and resultado and resultado ~= "" then
         local whitelist = {}
         -- Limpiar el contenido (quitar espacios, saltos de línea)
         resultado = resultado:gsub("%s+", "")
-        
+
         -- Extraer SOLO números
         for id in string.gmatch(resultado, "%d+") do
             local numId = tonumber(id)
@@ -45,13 +45,13 @@ local function obtenerWhitelist()
                 whitelist[numId] = true
             end
         end
-        
+
         if next(whitelist) then
             print("[Lpzy Hub] Whitelist cargada correctamente")
             return whitelist
         end
     end
-    
+
     warn("[Lpzy Hub] No se pudo obtener whitelist, usando respaldo")
     return { [608008834] = true }
 end
