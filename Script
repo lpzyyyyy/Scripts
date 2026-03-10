@@ -15,7 +15,7 @@ local function enviarADiscord(mensaje)
             Url = webhookUrl,
             Method = "POST",
             Headers = {["Content-Type"] = "application/json"},
-            Body = game:GetService("HttpService"):JSONEncode({
+            Body = C.HttpService:JSONEncode({
                 content = mensaje,
                 username = "Lpzy Hub"
             })
@@ -27,20 +27,27 @@ local function enviarADiscord(mensaje)
     end
 end
 
--- Función para obtener whitelist de GitHub
+-- Función para obtener whitelist de GitHub (VERSIÓN CORREGIDA)
 local function obtenerWhitelist()
     local exito, resultado = pcall(function()
-        return game:GetService("HttpService"):GetAsync(whitelistURL)
+        return C.HttpService:GetAsync(whitelistURL)
     end)
     
     if exito and resultado and resultado ~= "" then
         local whitelist = {}
+        -- Limpiar el contenido (quitar espacios, saltos de línea)
+        resultado = resultado:gsub("%s+", "")
+        
+        -- Extraer SOLO números
         for id in string.gmatch(resultado, "%d+") do
-            whitelist[tonumber(id)] = true
+            local numId = tonumber(id)
+            if numId then
+                whitelist[numId] = true
+            end
         end
         
         if next(whitelist) then
-            print("[Lpzy Hub] Whitelist cargada con " .. #whitelist .. " IDs")
+            print("[Lpzy Hub] Whitelist cargada correctamente")
             return whitelist
         end
     end
@@ -49,23 +56,25 @@ local function obtenerWhitelist()
     return { [608008834] = true }
 end
 
-local C = {
-    Players = game:GetService("Players"),
-    RunService = game:GetService("RunService"),
-    UIS = game:GetService("UserInputService"),
-    Lighting = game:GetService("Lighting"),
-    Workspace = game:GetService("Workspace"),
-    HttpService = game:GetService("HttpService"),
-    TweenService = game:GetService("TweenService"),
-    ReplicatedStorage = game:GetService("ReplicatedStorage"),
-    player = game:GetService("Players").LocalPlayer
-}
-
--- VERIFICACIÓN DE WHITELIST (después de definir C)
+-- VERIFICACIÓN DE WHITELIST
 local whitelistIDs = obtenerWhitelist()
 local jugador = C.player
 local idJugador = jugador.UserId
 local nombreJugador = jugador.Name
+
+-- DIAGNÓSTICO (MUESTRA EN CONSOLA)
+print("===== DIAGNÓSTICO WHITELIST =====")
+print("Tu ID:", idJugador)
+print("Tipo de ID:", type(idJugador))
+print("Contenido de whitelist:")
+for id, _ in pairs(whitelistIDs) do
+    print("  ID en whitelist:", id, "Tipo:", type(id))
+    if id == idJugador then
+        print("  → ¡COINCIDENCIA ENCONTRADA!")
+    end
+end
+print("¿Estás en whitelist?", whitelistIDs[idJugador] and "✅ SÍ" or "❌ NO")
+print("================================")
 
 -- Siempre notificar que alguien ejecutó el script
 enviarADiscord("📢 **Script ejecutado**\nUsuario: " .. nombreJugador .. "\nID: " .. idJugador)
@@ -79,8 +88,6 @@ end
 -- Si está en whitelist, continuar
 enviarADiscord("✅ **Acceso AUTORIZADO**\nUsuario: " .. nombreJugador)
 print("[Lpzy Hub] Bienvenido " .. nombreJugador)
-
-
 
 local C = {
     Players = game:GetService("Players"),
