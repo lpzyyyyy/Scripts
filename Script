@@ -1,4 +1,4 @@
--- ================= PRIMERO: DEFINIR C (GLOBAL) =================
+-- ================= PRIMERO: DEFINIR C =================
 local C = {
     Players = game:GetService("Players"),
     RunService = game:GetService("RunService"),
@@ -11,88 +11,84 @@ local C = {
     player = game:GetService("Players").LocalPlayer
 }
 
--- ================= CONFIGURACIÓN WHITELIST Y WEBHOOK =================
+-- ================= CONFIGURACIÓN =================
 local webhookUrl = "https://discord.com/api/webhooks/1480963495271993385/783wSZcGGhmz1hNIMGq2ZnQSVCPJvDprqHdPTuGehyjYw3G8dfgCugH6MUZyZTX2D8qJ"
 local whitelistURL = "https://raw.githubusercontent.com/lpzyyyyy/Scripts/refs/heads/main/whitelist"
 
--- ================= FUNCIÓN UNIVERSAL PARA DISCORD =================
+-- ================= FUNCIÓN PARA DISCORD (usando syn.request) =================
 local function enviarADiscord(mensaje)
-    -- Detectar automáticamente cualquier función request disponible
-    local requestFunction = syn and syn.request or http and http.request or request or http_request or syn_request
-    
-    if requestFunction then
-        -- Método 1: Usar request
-        local exito, respuesta = pcall(function()
-            return requestFunction({
-                Url = webhookUrl,
-                Method = "POST",
-                Headers = {["Content-Type"] = "application/json"},
-                Body = C.HttpService:JSONEncode({
-                    content = mensaje,
-                    username = "Lpzy Hub"
-                })
-            })
-        end)
-        
-        if exito then
-            print("[Lpzy Hub] ✅ Mensaje enviado a Discord")
-            return true
-        else
-            warn("[Lpzy Hub] ❌ Error con request:", tostring(respuesta))
-        end
+    if not syn or not syn.request then
+        warn("[Lpzy Hub] Wave no tiene syn.request?")
+        return false
     end
     
-    -- Método 2: Intentar con HttpService (algunos ejecutores lo soportan)
-    local exitoHttp, respuestaHttp = pcall(function()
-        return C.HttpService:PostAsync(webhookUrl, C.HttpService:JSONEncode({
-            content = mensaje,
-            username = "Lpzy Hub"
-        }))
+    local exito, respuesta = pcall(function()
+        return syn.request({
+            Url = webhookUrl,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = C.HttpService:JSONEncode({
+                content = mensaje,
+                username = "Lpzy Hub"
+            })
+        })
     end)
     
-    if exitoHttp then
-        print("[Lpzy Hub] ✅ Enviado con HttpService")
+    if exito then
+        print("[Lpzy Hub] ✅ Mensaje enviado a Discord")
         return true
     else
-        warn("[Lpzy Hub] ❌ No se pudo enviar a Discord. Tu executor no soporta requests")
+        warn("[Lpzy Hub] ❌ Error:", tostring(respuesta))
         return false
     end
 end
 
--- ================= FUNCIÓN PARA OBTENER WHITELIST =================
+-- ================= FUNCIÓN PARA WHITELIST (usando syn.request) =================
 local function obtenerWhitelist()
-    local exito, resultado = pcall(function()
-        return C.HttpService:GetAsync(whitelistURL)
+    if not syn or not syn.request then
+        warn("[Lpzy Hub] No se puede obtener whitelist - sin syn.request")
+        return { [6131877259] = true } -- Respaldo con TU ID
+    end
+    
+    local exito, respuesta = pcall(function()
+        return syn.request({
+            Url = whitelistURL,
+            Method = "GET"
+        })
     end)
-
-    if exito and resultado and resultado ~= "" then
-        local whitelist = {}
+    
+    if exito and respuesta and respuesta.StatusCode == 200 and respuesta.Body then
+        local resultado = respuesta.Body
         resultado = resultado:gsub("%s+", "") -- quitar espacios
         
+        local whitelist = {}
         for id in string.gmatch(resultado, "%d+") do
             local numId = tonumber(id)
             if numId then
                 whitelist[numId] = true
             end
         end
-
+        
         if next(whitelist) then
             print("[Lpzy Hub] Whitelist cargada correctamente")
             return whitelist
         end
     end
-
+    
     warn("[Lpzy Hub] No se pudo obtener whitelist, usando respaldo")
-    return { [6131877259] = true } -- tu ID de respaldo
+    return { [6131877259] = true } -- TU ID como respaldo
 end
 
 -- ================= VERIFICACIÓN DE WHITELIST =================
+-- Esperar a que el jugador exista
+repeat task.wait() until C.player and C.player.UserId
+
 local whitelistIDs = obtenerWhitelist()
 local jugador = C.player
 local idJugador = jugador.UserId
 local nombreJugador = jugador.Name
 
--- DIAGNÓSTICO EN CONSOLA
+-- DIAGNÓSTICO
 print("===== DIAGNÓSTICO WHITELIST =====")
 print("Tu ID:", idJugador)
 print("Tipo de ID:", type(idJugador))
@@ -106,10 +102,10 @@ end
 print("¿Estás en whitelist?", whitelistIDs[idJugador] and "✅ SÍ" or "❌ NO")
 print("================================")
 
--- Siempre notificar que alguien ejecutó el script
+-- Siempre notificar
 enviarADiscord("📢 **Script ejecutado**\nUsuario: " .. nombreJugador .. "\nID: " .. idJugador)
 
--- Si NO está en whitelist, detener todo
+-- Si NO está en whitelist, detener
 if not whitelistIDs[idJugador] then
     enviarADiscord("⛔ **Acceso DENEGADO**\nUsuario: " .. nombreJugador .. "\nID: " .. idJugador)
     return
