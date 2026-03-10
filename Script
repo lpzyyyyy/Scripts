@@ -1,3 +1,16 @@
+-- ================= PRIMERO: DEFINIR C (GLOBAL) =================
+local C = {
+    Players = game:GetService("Players"),
+    RunService = game:GetService("RunService"),
+    UIS = game:GetService("UserInputService"),
+    Lighting = game:GetService("Lighting"),
+    Workspace = game:GetService("Workspace"),
+    HttpService = game:GetService("HttpService"),
+    TweenService = game:GetService("TweenService"),
+    ReplicatedStorage = game:GetService("ReplicatedStorage"),
+    player = game:GetService("Players").LocalPlayer
+}
+
 -- ================= CONFIGURACIÓN WHITELIST Y WEBHOOK =================
 local webhookUrl = "https://discord.com/api/webhooks/1480963495271993385/783wSZcGGhmz1hNIMGq2ZnQSVCPJvDprqHdPTuGehyjYw3G8dfgCugH6MUZyZTX2D8qJ"
 local whitelistURL = "https://raw.githubusercontent.com/lpzyyyyy/Scripts/refs/heads/main/whitelist"
@@ -5,9 +18,9 @@ local whitelistURL = "https://raw.githubusercontent.com/lpzyyyyy/Scripts/refs/he
 -- Función para enviar a Discord
 local function enviarADiscord(mensaje)
     local request = syn and syn.request or http and http.request or request
-    if not request then 
+    if not request then
         warn("[Lpzy Hub] No request function found")
-        return 
+        return false
     end
 
     local exito, respuesta = pcall(function()
@@ -22,12 +35,16 @@ local function enviarADiscord(mensaje)
         })
     end)
 
-    if not exito then
+    if exito then
+        print("[Lpzy Hub] Mensaje enviado a Discord")
+        return true
+    else
         warn("[Lpzy Hub] Error enviando a Discord: " .. tostring(respuesta))
+        return false
     end
 end
 
--- Función para obtener whitelist de GitHub (VERSIÓN CORREGIDA)
+-- Función para obtener whitelist de GitHub
 local function obtenerWhitelist()
     local exito, resultado = pcall(function()
         return C.HttpService:GetAsync(whitelistURL)
@@ -35,10 +52,7 @@ local function obtenerWhitelist()
 
     if exito and resultado and resultado ~= "" then
         local whitelist = {}
-        -- Limpiar el contenido (quitar espacios, saltos de línea)
-        resultado = resultado:gsub("%s+", "")
-
-        -- Extraer SOLO números
+        resultado = resultado:gsub("%s+", "") -- quitar espacios
         for id in string.gmatch(resultado, "%d+") do
             local numId = tonumber(id)
             if numId then
@@ -53,16 +67,16 @@ local function obtenerWhitelist()
     end
 
     warn("[Lpzy Hub] No se pudo obtener whitelist, usando respaldo")
-    return { [608008834] = true }
+    return { [608008834] = true } -- tu ID de respaldo
 end
 
--- VERIFICACIÓN DE WHITELIST
+-- VERIFICACIÓN DE WHITELIST (AHORA C YA EXISTE)
 local whitelistIDs = obtenerWhitelist()
 local jugador = C.player
 local idJugador = jugador.UserId
 local nombreJugador = jugador.Name
 
--- DIAGNÓSTICO (MUESTRA EN CONSOLA)
+-- DIAGNÓSTICO
 print("===== DIAGNÓSTICO WHITELIST =====")
 print("Tu ID:", idJugador)
 print("Tipo de ID:", type(idJugador))
@@ -82,24 +96,12 @@ enviarADiscord("📢 **Script ejecutado**\nUsuario: " .. nombreJugador .. "\nID:
 -- Si NO está en whitelist, detener todo
 if not whitelistIDs[idJugador] then
     enviarADiscord("⛔ **Acceso DENEGADO**\nUsuario: " .. nombreJugador .. "\nID: " .. idJugador)
-    return -- ¡Esto detiene el script completamente!
+    return
 end
 
 -- Si está en whitelist, continuar
 enviarADiscord("✅ **Acceso AUTORIZADO**\nUsuario: " .. nombreJugador)
 print("[Lpzy Hub] Bienvenido " .. nombreJugador)
-
-local C = {
-    Players = game:GetService("Players"),
-    RunService = game:GetService("RunService"),
-    UIS = game:GetService("UserInputService"),
-    Lighting = game:GetService("Lighting"),
-    Workspace = game:GetService("Workspace"),
-    HttpService = game:GetService("HttpService"),
-    TweenService = game:GetService("TweenService"),
-    ReplicatedStorage = game:GetService("ReplicatedStorage"),
-    player = game:GetService("Players").LocalPlayer
-}
 
 local isMobile = C.UIS.TouchEnabled and not C.UIS.KeyboardEnabled
 local guiScale = isMobile and 0.4 or 1.0
