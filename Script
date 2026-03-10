@@ -1,5 +1,4 @@
-
--- ================= DESPUÉS: CONFIGURACIÓN WHITELIST =================
+-- ================= CONFIGURACIÓN WHITELIST Y WEBHOOK =================
 local webhookUrl = "https://discord.com/api/webhooks/1480963495271993385/783wSZcGGhmz1hNIMGq2ZnQSVCPJvDprqHdPTuGehyjYw3G8dfgCugH6MUZyZTX2D8qJ"
 local whitelistURL = "https://raw.githubusercontent.com/lpzyyyyy/Scripts/refs/heads/main/whitelist"
 
@@ -16,7 +15,7 @@ local function enviarADiscord(mensaje)
             Url = webhookUrl,
             Method = "POST",
             Headers = {["Content-Type"] = "application/json"},
-            Body = C.HttpService:JSONEncode({  -- <-- AHORA C YA EXISTE
+            Body = C.HttpService:JSONEncode({
                 content = mensaje,
                 username = "Lpzy Hub"
             })
@@ -28,21 +27,25 @@ local function enviarADiscord(mensaje)
     end
 end
 
--- Función para obtener whitelist de GitHub
+-- Función para obtener whitelist de GitHub (VERSIÓN CORREGIDA)
 local function obtenerWhitelist()
     local exito, resultado = pcall(function()
-        return C.HttpService:GetAsync(whitelistURL)  -- <-- AHORA C YA EXISTE
+        return C.HttpService:GetAsync(whitelistURL)
     end)
 
     if exito and resultado and resultado ~= "" then
         local whitelist = {}
+        -- Limpiar el contenido (quitar espacios, saltos de línea)
         resultado = resultado:gsub("%s+", "")
+
+        -- Extraer SOLO números
         for id in string.gmatch(resultado, "%d+") do
             local numId = tonumber(id)
             if numId then
                 whitelist[numId] = true
             end
         end
+
         if next(whitelist) then
             print("[Lpzy Hub] Whitelist cargada correctamente")
             return whitelist
@@ -53,13 +56,13 @@ local function obtenerWhitelist()
     return { [608008834] = true }
 end
 
--- VERIFICACIÓN DE WHITELIST (AHORA C YA EXISTE)
+-- VERIFICACIÓN DE WHITELIST
 local whitelistIDs = obtenerWhitelist()
 local jugador = C.player
 local idJugador = jugador.UserId
 local nombreJugador = jugador.Name
 
--- DIAGNÓSTICO
+-- DIAGNÓSTICO (MUESTRA EN CONSOLA)
 print("===== DIAGNÓSTICO WHITELIST =====")
 print("Tu ID:", idJugador)
 print("Tipo de ID:", type(idJugador))
@@ -73,13 +76,13 @@ end
 print("¿Estás en whitelist?", whitelistIDs[idJugador] and "✅ SÍ" or "❌ NO")
 print("================================")
 
--- Siempre notificar
+-- Siempre notificar que alguien ejecutó el script
 enviarADiscord("📢 **Script ejecutado**\nUsuario: " .. nombreJugador .. "\nID: " .. idJugador)
 
--- Si NO está en whitelist, detener
+-- Si NO está en whitelist, detener todo
 if not whitelistIDs[idJugador] then
     enviarADiscord("⛔ **Acceso DENEGADO**\nUsuario: " .. nombreJugador .. "\nID: " .. idJugador)
-    return
+    return -- ¡Esto detiene el script completamente!
 end
 
 -- Si está en whitelist, continuar
