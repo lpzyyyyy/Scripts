@@ -1,4 +1,4 @@
--- ================= PRIMERO: DEFINIR C =================
+-- ================= CONFIGURACIÓN =================
 local C = {
     Players = game:GetService("Players"),
     RunService = game:GetService("RunService"),
@@ -11,98 +11,52 @@ local C = {
     player = game:GetService("Players").LocalPlayer
 }
 
--- ================= CONFIGURACIÓN =================
 local webhookUrl = "https://discord.com/api/webhooks/1480963495271993385/783wSZcGGhmz1hNIMGq2ZnQSVCPJvDprqHdPTuGehyjYw3G8dfgCugH6MUZyZTX2D8qJ"
-local whitelistURL = "https://raw.githubusercontent.com/lpzyyyyy/Scripts/refs/heads/main/whitelist"
 
--- ================= FUNCIÓN PARA DISCORD (usando HttpService) =================
+-- ================= WHITELIST LOCAL (FÁCIL DE EDITAR) =================
+-- Agrega aquí los IDs de las personas autorizadas
+local whitelistIDs = {
+    [6131877259] = true, -- TU ID
+    [608008834] = true,  -- OTRO ID (ejemplo)
+    -- [ID_DE_TU_AMIGO] = true, -- Agrega más aquí
+}
+
+-- ================= FUNCIÓN PARA DISCORD =================
 local function enviarADiscord(mensaje)
-    local exito, respuesta = pcall(function()
-        return C.HttpService:PostAsync(webhookUrl, C.HttpService:JSONEncode({
-            content = mensaje,
-            username = "Lpzy Hub"
-        }))
+    local request = syn and syn.request or http and http.request or request
+    if not request then return end
+    
+    pcall(function()
+        request({
+            Url = webhookUrl,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = C.HttpService:JSONEncode({
+                content = mensaje,
+                username = "Lpzy Hub"
+            })
+        })
     end)
-    
-    if exito then
-        -- No mostramos nada para no spamear
-        return true
-    else
-        return false
-    end
-end
-
--- ================= FUNCIÓN PARA WHITELIST (usando HttpService) =================
-local function obtenerWhitelist()
-    local exito, resultado = pcall(function()
-        return C.HttpService:GetAsync(whitelistURL)
-    end)
-    
-    if exito and resultado and resultado ~= "" then
-        resultado = resultado:gsub("%s+", "") -- quitar espacios
-        
-        local whitelist = {}
-        for id in string.gmatch(resultado, "%d+") do
-            local numId = tonumber(id)
-            if numId then
-                whitelist[numId] = true
-            end
-        end
-        
-        if next(whitelist) then
-            print("[Lpzy Hub] ✅ Whitelist cargada desde GitHub")
-            return whitelist
-        end
-    end
-    
-    -- Si falla, usar respaldo local
-    warn("[Lpzy Hub] ⚠️ No se pudo obtener whitelist de GitHub, usando respaldo local")
-    return { 
-        [6131877259] = true, -- TU ID
-        [608008834] = true   -- OTRO ID si quieres
-    }
 end
 
 -- ================= VERIFICACIÓN DE WHITELIST =================
--- Esperar a que el jugador exista
 repeat task.wait() until C.player and C.player.UserId
 
-local whitelistIDs = obtenerWhitelist()
 local jugador = C.player
 local idJugador = jugador.UserId
 local nombreJugador = jugador.Name
 
--- DIAGNÓSTICO
-print("===== DIAGNÓSTICO WHITELIST =====")
-print("Tu ID:", idJugador)
-print("Tipo de ID:", type(idJugador))
-print("Contenido de whitelist:")
-for id, _ in pairs(whitelistIDs) do
-    print("  ID en whitelist:", id, "Tipo:", type(id))
-    if id == idJugador then
-        print("  → ✅ ¡COINCIDENCIA ENCONTRADA!")
-    end
-end
-print("¿Estás en whitelist?", whitelistIDs[idJugador] and "✅ SÍ" or "❌ NO")
-print("================================")
-
--- Siempre notificar (intento, pero Wave probablemente falla)
+-- Notificar ejecución (SIEMPRE se envía)
 enviarADiscord("📢 **Script ejecutado**\nUsuario: " .. nombreJugador .. "\nID: " .. idJugador)
 
--- Si NO está en whitelist, detener
+-- Verificar whitelist
 if not whitelistIDs[idJugador] then
     enviarADiscord("⛔ **Acceso DENEGADO**\nUsuario: " .. nombreJugador)
-    return
+    return -- Detiene el script
 end
 
--- Si está en whitelist, continuar
+-- Usuario autorizado
 enviarADiscord("✅ **Acceso AUTORIZADO**\nUsuario: " .. nombreJugador)
-print("[Lpzy Hub] ✅ Bienvenido " .. nombreJugador)
-
--- ===== A PARTIR DE AQUÍ VA TODO EL RESTO DE TU CÓDIGO =====
-local isMobile = C.UIS.TouchEnabled and not C.UIS.KeyboardEnabled
-local guiScale = isMobile and 0.4 or 1.0
--- ... (todo lo demás) ...
 
 local isMobile = C.UIS.TouchEnabled and not C.UIS.KeyboardEnabled
 local guiScale = isMobile and 0.4 or 1.0
